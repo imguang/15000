@@ -79,16 +79,16 @@ public class detailPageProcess implements PageProcessor {
 				String temFlagString = flags.get(i);
 				temFlagString = temFlagString.replace(" ", "");
 				if (i == 0) {
-					if (temFlagString.contains("K∏Ë")) {
+					if (temFlagString.contains("K∏Ë")
+							|| temFlagString.contains("≤ÕÃ¸")
+							|| temFlagString.contains("µÁ”∞")
+							|| temFlagString.contains("æ∆µÍ")) {
 						city = temFlagString.substring(0,
 								temFlagString.length() - 2);
 					}
 					if (temFlagString.contains("–›œ–”È¿÷")) {
-						System.out.println(temFlagString);
 						city = temFlagString.substring(0,
 								temFlagString.length() - 4);
-
-						System.out.println(city);
 					}
 					if ("".equals(city) || null == city) {
 					} else {
@@ -118,7 +118,7 @@ public class detailPageProcess implements PageProcessor {
 			shopInfoRequest.setUrl(DazongPageProcessor.URLBASE_JSON
 					+ DazongPageProcessor.unixTime + "&shopId=" + shopId);
 			shopInfoRequest.putExtra("type", TYPE_JSON);
-			shopInfoRequest.putExtra("type2", TYPE_KTV);
+			shopInfoRequest.putExtra("type2", type2);
 			shopInfoRequest.putExtra("shopId", shopId);
 			shopInfoRequest.putExtra("shopFlag", sqlString);
 			shopInfoRequest.putExtra("shopNum", temString);
@@ -155,7 +155,7 @@ public class detailPageProcess implements PageProcessor {
 			 * "`writeUp`,`popularity`,`glat`,`glng`,`shopPower`,`businessHours`,`commentCount`,"
 			 * + "`parkReviewCount`,`consumeNum`)
 			 */
-			
+
 			params.add(shopId);
 			params.add(jsonObject.get("shopName"));
 			params.add(jsonObject.get("branchName"));
@@ -165,9 +165,12 @@ public class detailPageProcess implements PageProcessor {
 			params.add(jsonObject.get("phoneNo2"));
 			String cityId = jsonObject.get("cityId").toString();
 			params.add(cityId);
-			String findCity = "select cityNameCh,cityNameEn,province from dazhongdianping_city where cityId = " + cityId + " limit 1";
+			String findCity = "select cityNameCh,cityNameEn,province from dazhongdianping_city where cityId = "
+					+ cityId + " limit 1";
 			try {
-				Map<String, Object> cityInfo = JdbcUtils.findSimpleResult(findCity, null, DazongPageProcessor.dbp.getConnection());
+				Map<String, Object> cityInfo = JdbcUtils
+						.findSimpleResult(findCity, null,
+								DazongPageProcessor.dbp.getConnection());
 				province = (String) cityInfo.get("province");
 				cityNameEn = (String) cityInfo.get("cityNameEn");
 				cityNameCh = (String) cityInfo.get("cityNameCh");
@@ -175,8 +178,8 @@ public class detailPageProcess implements PageProcessor {
 			} catch (SQLException e) {
 				System.out.println("find City error!");
 			}
-			params.add(""+cityNameCh);
-			params.add(""+cityNameEn);
+			params.add("" + cityNameCh);
+			params.add("" + cityNameEn);
 			params.add(toZero.toZeroUtil(jsonObject.get("hits")));
 			params.add(toZero.toZeroUtil(jsonObject.get("todayHits")));
 			params.add(toZero.toZeroUtil(jsonObject.get("weeklyHits")));
@@ -200,38 +203,37 @@ public class detailPageProcess implements PageProcessor {
 			params.add(city);
 			params.add(district);
 
-			String sql = "";
+			StringBuffer sql = new StringBuffer("INSERT ignore INTO ");
 			switch (type2) {
 			case TYPE_FOOD:
-				sql = "update dazongdianping_shopinfo_single_food set ";
+				sql.append("`dazongdianping`.`dazhongdianping_shopinfo_single_food_20160507`");
 				break;
 			case TYPE_MOVIE:
-				sql = "update dazongdianping_shopinfo_single_movie set ";
+				sql.append("`dazongdianping`.`dazhongdianping_shopinfo_single_movie_20160507`");
 				break;
 			case TYPE_HOTEL:
-				sql = "update dazongdianping_shopinfo_single_hotel set ";
+				sql.append("`dazongdianping`.`dazhongdianping_shopinfo_single_hotel_20160507`");
 				break;
 			case TYPE_KTV:
-				sql = "INSERT ignore INTO `dazongdianping`.`dazhongdianping_shopinfo_single_ktv_20160507`"
-						+ "(`shopId`,`shopName`,`branchName`,`tagInfo`,`address`,`phoneNo`,`phoneNo2`,`cityId`,"
-						+ "`cityNameCh`,`cityNameEn`,"
-						+ "`hits`,`todayHits`,`weeklyHits`,`prevWeeklyHits`,"
-						+ "`monthlyHits`,`wishTotal`,`score`,`score1`,`score2`,`score3`,`avgPrice`,"
-						+ "`writeUp`,`popularity`,`glat`,`glng`,`shopPower`,`businessHours`,`commentCount`,"
-						+ "`parkReviewCount`,`province`,`city`,`district`) values";
+				sql.append("`dazongdianping`.`dazhongdianping_shopinfo_single_ktv_20160507`");
 				break;
 			default:
 				break;
 			}
-
+			sql.append("(`shopId`,`shopName`,`branchName`,`tagInfo`,`address`,`phoneNo`,`phoneNo2`,`cityId`,"
+					+ "`cityNameCh`,`cityNameEn`,"
+					+ "`hits`,`todayHits`,`weeklyHits`,`prevWeeklyHits`,"
+					+ "`monthlyHits`,`wishTotal`,`score`,`score1`,`score2`,`score3`,`avgPrice`,"
+					+ "`writeUp`,`popularity`,`glat`,`glng`,`shopPower`,`businessHours`,`commentCount`,"
+					+ "`parkReviewCount`,`province`,`city`,`district`) values");
 			sql = sql
-					+ "(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+					.append("(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
 			System.out.println(params);
 
 			page.putField("params", params);
-			page.putField("sql", sql);
-			// page.setSkip(true);
+			page.putField("sql", sql.toString());
 			totalJsonObject = null;
+			sql = null;
 			jsonObject = null;
 			params = null;
 			break;
